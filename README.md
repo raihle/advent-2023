@@ -4,6 +4,4 @@ Solutions for [Advent of Code 2023](https://adventofcode.com/2023). Inputs not i
 
 ## Usage
 
-```bash
-node days/day1.js
-```
+Save the input as "input.txt" inside the corresponding "days/X" folder (e.g. days/1/input.txt), and run with `npm start X`, e.g. `npm start 1`.

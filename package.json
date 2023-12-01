@@ -1,0 +1,8 @@
+{
+  "name": "advent-2023",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node runner.js"
+  }
+}
