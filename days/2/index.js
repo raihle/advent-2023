@@ -1,16 +1,11 @@
 export function run(input) {
   const games = input.trim().split("\n").map(toGame);
   console.log("A", a(games));
+  console.log("B", b(games));
 }
 
-function a(games) {
-  const allowed = {
-    red: 12,
-    green: 13,
-    blue: 14,
-  };
-  const possibleGames = [];
-  let sumOfPossible = 0;
+function maxSeenInGames(games) {
+  const maxSeenInGames = [];
   for (const game of games) {
     const maxSeen = {
       red: 0,
@@ -22,21 +17,41 @@ function a(games) {
         maxSeen[cubes.color] = Math.max(maxSeen[cubes.color], cubes.count);
       }
     }
-    if (
-      maxSeen.red <= allowed.red &&
-      maxSeen.green <= allowed.green &&
-      maxSeen.blue <= allowed.blue
-    ) {
-      possibleGames.push(game);
-      sumOfPossible += game.id;
-      console.log("Possible", JSON.stringify(game, null, 2));
-    } else {
-      console.log("Not possible", JSON.stringify(game, null, 2));
-    }
+    maxSeenInGames.push({
+      ...game,
+      maxSeen,
+    });
   }
-  return sumOfPossible;
+  return maxSeenInGames;
 }
 
+function a(games) {
+  const allowed = {
+    red: 12,
+    green: 13,
+    blue: 14,
+  };
+  const processedGames = maxSeenInGames(games);
+  const possibleGames = processedGames.filter(
+    (game) =>
+      game.maxSeen.red <= allowed.red &&
+      game.maxSeen.green <= allowed.green &&
+      game.maxSeen.blue <= allowed.blue
+  );
+  const sumOfPossibleGameIds = possibleGames.reduce(
+    (acc, game) => acc + game.id,
+    0
+  );
+  return sumOfPossibleGameIds;
+}
+
+function b(games) {
+  const processedGames = maxSeenInGames(games);
+  const powerOfGames = processedGames.map(
+    (game) => game.maxSeen.red * game.maxSeen.green * game.maxSeen.blue
+  );
+  return powerOfGames.reduce((acc, power) => acc + power);
+}
 function toGame(text) {
   const [id, content] = text.split(":");
   const sets = content.split(";").map(toCubes);
