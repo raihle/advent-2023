@@ -1,66 +1,55 @@
-export function run(input) {
-  const games = input.trim().split("\n").map(toGame);
-  console.log("A", a(games));
-  console.log("B", b(games));
-}
+import { sum } from "../../utils.js";
 
-function maxSeenInGames(games) {
-  const maxSeenInGames = [];
-  for (const game of games) {
-    const maxSeen = {
-      red: 0,
-      green: 0,
-      blue: 0,
-    };
-    for (const set of game.sets) {
-      for (const cubes of set) {
-        maxSeen[cubes.color] = Math.max(maxSeen[cubes.color], cubes.count);
-      }
-    }
-    maxSeenInGames.push({
-      ...game,
-      maxSeen,
-    });
-  }
-  return maxSeenInGames;
+export function run(input) {
+  const games = input.trim().split("\n").map(parseGame);
+  console.log("A:", a(games));
+  console.log("B:", b(games));
 }
 
 function a(games) {
-  const allowed = {
-    red: 12,
-    green: 13,
-    blue: 14,
-  };
-  const processedGames = maxSeenInGames(games);
-  const possibleGames = processedGames.filter(
-    (game) =>
-      game.maxSeen.red <= allowed.red &&
-      game.maxSeen.green <= allowed.green &&
-      game.maxSeen.blue <= allowed.blue
-  );
-  const sumOfPossibleGameIds = possibleGames.reduce(
-    (acc, game) => acc + game.id,
-    0
-  );
-  return sumOfPossibleGameIds;
+  return games
+    .filter((game) => {
+      const { red, green, blue } = maxSeen(game);
+      return red <= 12 && green <= 13 && blue <= 14;
+    })
+    .map((game) => game.id)
+    .reduce(sum);
 }
 
 function b(games) {
-  const processedGames = maxSeenInGames(games);
-  const powerOfGames = processedGames.map(
-    (game) => game.maxSeen.red * game.maxSeen.green * game.maxSeen.blue
-  );
-  return powerOfGames.reduce((acc, power) => acc + power);
+  return games
+    .map(maxSeen)
+    .map(({ red, green, blue }) => red * green * blue)
+    .reduce(sum);
 }
-function toGame(text) {
+
+function maxSeen(game) {
+  return {
+    red: maxSeenOfColor(game, "red"),
+    green: maxSeenOfColor(game, "green"),
+    blue: maxSeenOfColor(game, "blue"),
+  };
+}
+
+function maxSeenOfColor(game, color) {
+  return game.sets.reduce((acc, set) => Math.max(acc, set[color]), 0);
+}
+
+function parseGame(text) {
   const [id, content] = text.split(":");
-  const sets = content.split(";").map(toCubes);
+  const sets = content.split(";").map(parseSet);
   return { id: Number(id.replace("Game ", "")), sets };
 }
 
-function toCubes(setText) {
-  return setText.split(",").map((t) => {
+function parseSet(setText) {
+  const cubes = {
+    red: 0,
+    green: 0,
+    blue: 0,
+  };
+  setText.split(",").forEach((t) => {
     const [count, color] = t.trim().split(" ");
-    return { count: Number(count), color };
+    return (cubes[color] = Number(count));
   });
+  return cubes;
 }
