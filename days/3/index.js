@@ -3,16 +3,26 @@ import { sum } from "../../utils.js";
 export function run(input) {
   const field = parseField(input.trim().split("\n"));
   console.log("A:", a(field));
+  console.log("B:", b(field));
 }
 
 function a(field) {
-  const numbers = field.numbers.filter((number) =>
-    hasNearbySymbol(number, field.symbols)
+  const numbers = field.numbers.filter(
+    (number) => getNearbySymbols(number, field.symbols).length >= 1
   );
   return numbers.map(({ value }) => value).reduce(sum);
 }
 
-function hasNearbySymbol(number, symbols) {
+function b(field) {
+  return field.symbols
+    .filter(({ symbol }) => symbol == "*")
+    .map((symbol) => getNearbyNumbers(symbol, field.numbers))
+    .filter((nearbyNumbers) => nearbyNumbers.length == 2)
+    .map(([num1, num2]) => num1.value * num2.value)
+    .reduce(sum);
+}
+
+function getNearbySymbols(number, symbols) {
   const lowY = number.line - 1;
   const highY = number.line + 1;
   const lowX = number.start - 1;
@@ -25,7 +35,23 @@ function hasNearbySymbol(number, symbols) {
       symbol.index <= highX
     );
   });
-  return matches.length >= 1;
+  return matches;
+}
+
+function getNearbyNumbers(symbol, numbers) {
+  const lowY = symbol.line - 1;
+  const highY = symbol.line + 1;
+  const lowX = symbol.index - 1;
+  const highX = symbol.index + 1;
+  const matches = numbers.filter((number) => {
+    return (
+      number.line >= lowY &&
+      number.line <= highY &&
+      number.end >= lowX &&
+      number.start <= highX
+    );
+  });
+  return matches;
 }
 
 function parseField(lines) {
