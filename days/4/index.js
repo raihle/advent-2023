@@ -10,6 +10,28 @@ function a(cards) {
   return cards.map(scoreCard).reduce(sum);
 }
 
+function b(cards) {
+  const cardWins = cards.map((card) => wins(card).length);
+  const instances = [];
+  for (let i = 0; i < cards.length; i++) {
+    instances.push(1);
+  }
+  console.log("start with", instances.reduce(sum));
+  for (let i = 0; i < cards.length - 1; i++) {
+    for (
+      let copyOf = i + 1;
+      copyOf <= i + cardWins[i] && copyOf < cards.length;
+      copyOf++
+    ) {
+      instances[copyOf] = instances[copyOf] + instances[i];
+    }
+    console.log(
+      `After ${i + 1} (${cardWins[i]}), have ${instances.reduce(sum)}`
+    );
+  }
+  return instances.reduce(sum);
+}
+
 function parseCards(lines) {
   const cards = lines.map(parseCard);
   return cards;
@@ -29,21 +51,16 @@ function parseCard(line) {
   };
 }
 
-function scoreCard(card) {
-  const wins = card.actual.filter((actual) => {
+function wins(card) {
+  return card.actual.filter((actual) => {
     return card.winning.includes(actual);
   });
-  if (wins.length == 0) {
+}
+
+function scoreCard(card) {
+  const cardWins = wins(card);
+  if (cardWins.length == 0) {
     return 0;
   }
-  console.log(
-    card,
-    " has ",
-    wins.length,
-    "wins (",
-    wins,
-    ") worth ",
-    Math.pow(2, wins.length - 1)
-  );
-  return Math.pow(2, wins.length - 1);
+  return Math.pow(2, cardWins.length - 1);
 }
