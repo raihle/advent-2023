@@ -1,9 +1,6 @@
-import { sum } from "../../utils.js";
-
 export function run(input) {
-  const cal = parseCalendar(input.trim());
-  console.log("A:", a(cal));
-  console.log("B:", b(cal));
+  console.log("A:", a(parseCalendar(input.trim())));
+  console.log("B:", b(parseCalendarB(input.trim())));
 }
 
 function min(array) {
@@ -24,26 +21,12 @@ function a(cal) {
   return min(locations);
 }
 
-function b(cards) {
-  const cardWins = cards.map((card) => wins(card).length);
-  const instances = [];
-  for (let i = 0; i < cards.length; i++) {
-    instances.push(1);
-  }
-  console.log("start with", instances.reduce(sum));
-  for (let i = 0; i < cards.length - 1; i++) {
-    for (
-      let copyOf = i + 1;
-      copyOf <= i + cardWins[i] && copyOf < cards.length;
-      copyOf++
-    ) {
-      instances[copyOf] = instances[copyOf] + instances[i];
-    }
-    console.log(
-      `After ${i + 1} (${cardWins[i]}), have ${instances.reduce(sum)}`
-    );
-  }
-  return instances.reduce(sum);
+function b(cal) {
+  const locations = cal.mappers.reduce(
+    (acc, mapper) => acc.flatMap(mapper),
+    cal.seeds
+  );
+  return min(locations.map((loc) => loc.low));
 }
 
 function parseCalendar(input) {
@@ -59,6 +42,20 @@ function parseCalendar(input) {
   return { seeds, mappers };
 }
 
+function parseCalendarB(input) {
+  const [seedLine, ...mapBlocks] = input
+    .split("\n\n")
+    .map((block) => block.trim());
+  let seeds = [];
+  for (const seedGroup of seedLine.matchAll(/(\d+)\s+(\d+)/g)) {
+    const low = Number(seedGroup[1]);
+    const high = low + Number(seedGroup[2]) - 1;
+    seeds.push({ low, high });
+  }
+  const mappers = mapBlocks.map(parseRangeMapper);
+  return { seeds, mappers };
+}
+
 function parseMapper(block) {
   const [nameLine, ...rangeLines] = block
     .split("\n")
@@ -71,6 +68,55 @@ function parseMapper(block) {
       }
     }
     return num;
+  };
+}
+
+function mapRange(input, mappers) {
+  const mappersToTake = [...mappers].sort(
+    (a, b) => a.source.low - b.source.low
+  );
+  let currentVal = input.low;
+  let end = input.high;
+  const output = [];
+  while (currentVal <= end) {
+    if (mappersToTake.length == 0) {
+      output.push({
+        low: currentVal,
+        high: end,
+      });
+      currentVal = end;
+    } else if (currentVal < mappersToTake[0].source.low) {
+      const nextVal = mappersToTake[0].source.low - 1;
+      output.push({
+        low: currentVal,
+        high: Math.min(end, nextVal),
+      });
+      currentVal = nextVal;
+    } else {
+      const mapper = mappersToTake.shift();
+      if (currentVal > mapper.source.high) {
+        continue;
+      }
+      const nextVal = Math.min(mapper.source.high, end);
+      output.push({
+        low: mapper.destination.low - mapper.source.low + currentVal,
+        high: mapper.destination.low - mapper.source.low + nextVal,
+      });
+      currentVal = nextVal;
+    }
+    currentVal++;
+  }
+  return output;
+}
+
+function parseRangeMapper(block) {
+  const [nameLine, ...rangeLines] = block
+    .split("\n")
+    .map((line) => line.trim());
+  const ranges = rangeLines.map(parseRange);
+
+  return function (inputRange) {
+    return mapRange(inputRange, ranges);
   };
 }
 
