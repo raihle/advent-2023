@@ -1,16 +1,8 @@
+import { min } from "../../utils.js";
+
 export function run(input) {
   console.log("A:", a(parseCalendar(input.trim())));
   console.log("B:", b(parseCalendarB(input.trim())));
-}
-
-function min(array) {
-  let smallest = Number.MAX_SAFE_INTEGER;
-  for (const num of array) {
-    if (num < smallest) {
-      smallest = num;
-    }
-  }
-  return smallest;
 }
 
 function a(cal) {
