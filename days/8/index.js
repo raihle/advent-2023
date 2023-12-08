@@ -1,4 +1,4 @@
-import { min } from "../../utils.js";
+import { lcm, min } from "../../utils.js";
 
 export function run(input) {
   const map = parseMap(input.trim());
@@ -51,29 +51,25 @@ function b({ nodes, instructions }) {
     });
   }
 
-  console.warn("Found cycles");
-
   const cycles = ghosts.map((ghost) => {
     return {
       start: ghost.cycleStart,
       length: ghost.cycleLength,
     };
   });
+
   const firstCycleStart = min(cycles.map((cycle) => cycle.start));
-  const smallestCycleLength = min(cycles.map((cycle) => cycle.length));
   let at = firstCycleStart;
-  let rounds = 0;
-  while (cycles.some((cycle) => (at - cycle.start) % cycle.length != 0)) {
-    at += smallestCycleLength;
-    rounds++;
-    if (rounds % 100000000 == 0) {
-      console.warn(`Round ${rounds} testing ${at}`);
+  while (at < Number.MAX_SAFE_INTEGER) {
+    const matchingCycles = cycles.filter(
+      (cycle) => (at - cycle.start) % cycle.length == 0
+    );
+    if (matchingCycles.length == cycles.length) {
+      return at;
     }
-    if (at >= Number.MAX_SAFE_INTEGER) {
-      throw new Error("Reached MAX_SAFE_INTEGER");
-    }
+    at += matchingCycles.map((cycle) => cycle.length).reduce(lcm);
   }
-  return at;
+  throw new Error("Reached MAX_SAFE_INTEGER");
 }
 
 function parseMap(input) {
