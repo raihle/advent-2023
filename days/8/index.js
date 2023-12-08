@@ -60,6 +60,8 @@ function b({ nodes, instructions }) {
 
   const firstCycleStart = min(cycles.map((cycle) => cycle.start));
   let at = firstCycleStart;
+  let matched = 0;
+  let stepSize = 1;
   while (at < Number.MAX_SAFE_INTEGER) {
     const matchingCycles = cycles.filter(
       (cycle) => (at - cycle.start) % cycle.length == 0
@@ -67,7 +69,11 @@ function b({ nodes, instructions }) {
     if (matchingCycles.length == cycles.length) {
       return at;
     }
-    at += matchingCycles.map((cycle) => cycle.length).reduce(lcm);
+    if (matchingCycles.length > matched) {
+      stepSize = matchingCycles.map((cycle) => cycle.length).reduce(lcm);
+      matched = matchingCycles.length;
+    }
+    at += stepSize;
   }
   throw new Error("Reached MAX_SAFE_INTEGER");
 }
