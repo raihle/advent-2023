@@ -28,16 +28,53 @@ const PIPE_MAP = {
 };
 
 export function run(input) {
-  const pipes = parsePipes(input.trim());
-  console.log("A:", a(pipes));
+  const { pipes, start } = parsePipes(input.trim());
+  const distances = pipeDistancesFromStart(pipes, start);
+  console.log("A:", a(distances));
+  console.log("B:", b(pipes, distances));
 }
 
-function a({ pipes, start }) {
-  console.log(pipes.map((line) => line.join("")).join("\n"));
-  const distances = pipeDistancesFromStart(pipes, start);
-  console.log(distances.map((line) => line.join("")).join("\n"));
-
+function a(distances) {
   return max(distances.map(max));
+}
+
+function b(pipes, distances) {
+  let tilesIn = 0;
+  let inLoop = false;
+  let onEdge = "no";
+  const pipesOfLoop = pipes.map((line, y) =>
+    line.map((pipe, x) => (distances[y][x] == "." ? "." : pipe))
+  );
+  for (const line of pipesOfLoop) {
+    for (const pipe of line) {
+      if (pipe == ".") {
+        if (inLoop) {
+          tilesIn++;
+        }
+      } else if (pipe == "|") {
+        inLoop = !inLoop;
+      } else if (pipe == "F" || pipe == "7") {
+        if (onEdge == "up") {
+          onEdge = "no";
+          inLoop = !inLoop;
+        } else if (onEdge == "down") {
+          onEdge = "no";
+        } else {
+          onEdge = "down";
+        }
+      } else if (pipe == "L" || pipe == "J") {
+        if (onEdge == "down") {
+          onEdge = "no";
+          inLoop = !inLoop;
+        } else if (onEdge == "up") {
+          onEdge = "no";
+        } else {
+          onEdge = "up";
+        }
+      }
+    }
+  }
+  return tilesIn;
 }
 
 function parsePipes(input) {
@@ -59,10 +96,10 @@ function parsePipes(input) {
 }
 
 function whatIsStart(pipes, start) {
-  const left = pipes[start.y][start.x - 1];
-  const right = pipes[start.y][start.x + 1];
-  const top = pipes[start.y - 1][start.x];
-  const bottom = pipes[start.y + 1][start.x];
+  const left = pipes[start.y]?.[start.x - 1] ?? ".";
+  const right = pipes[start.y]?.[start.x + 1] ?? ".";
+  const top = pipes[start.y - 1]?.[start.x] ?? ".";
+  const bottom = pipes[start.y + 1]?.[start.x] ?? ".";
   if (connectsRight(left)) {
     if (connectsLeft(right)) {
       return "-";
