@@ -16,6 +16,16 @@ export function min(array) {
   return smallest;
 }
 
+export function max(array) {
+  let largest = Number.MIN_SAFE_INTEGER;
+  for (const num of array) {
+    if (num > largest) {
+      largest = num;
+    }
+  }
+  return largest;
+}
+
 export function lcm(a, b) {
   return Math.abs(a * (b / gcd(a, b)));
 }
