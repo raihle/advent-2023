@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node runner.js"
+    "start": "node --max-old-space-size=16284 runner.js"
   }
 }
