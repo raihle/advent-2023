@@ -1,4 +1,4 @@
-import { sum } from "../../utils.js";
+import { sum, makePairs } from "../../utils.js";
 
 export function run(input) {
   const galaxyMap = parseUniverse(input.trim());
@@ -45,16 +45,6 @@ function findGalaxies(galaxyMap) {
     }
   }
   return galaxies;
-}
-
-function makePairs(items) {
-  const pairs = [];
-  for (let a = 0; a < items.length; a++) {
-    for (let b = a + 1; b < items.length; b++) {
-      pairs.push([items[a], items[b]]);
-    }
-  }
-  return pairs;
 }
 
 function findEmptySpace(galaxyMap) {

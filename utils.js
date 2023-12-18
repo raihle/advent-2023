@@ -42,3 +42,13 @@ export function gcd(a, b) {
   }
   return gcd(a, b % a);
 }
+
+export function makePairs(items) {
+  const pairs = [];
+  for (let a = 0; a < items.length; a++) {
+    for (let b = a + 1; b < items.length; b++) {
+      pairs.push([items[a], items[b]]);
+    }
+  }
+  return pairs;
+}
