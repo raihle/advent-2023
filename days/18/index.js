@@ -1,7 +1,5 @@
 import { sum, makePairs } from "../../utils.js";
 
-const DEBUG = false;
-
 export function run(input) {
   const plan = parsePlan(input.trim());
   console.log("A:", solve(plan));
@@ -14,20 +12,14 @@ function solve(plan) {
   let squares = [];
   while (queue.length > 0) {
     const edge = queue.pop();
-    DEBUG && console.log("Edge", edge);
     const left = findLeft(edges, edge);
-    DEBUG && console.log("Left", left);
     const crossingCount = countLeftCrossings(left, edge);
-    DEBUG && console.log("Crossers", crossingCount);
     const leftInside = crossingCount % 2 == 1;
-    DEBUG && console.log("Counted", leftInside);
     if (!leftInside) {
       continue;
     }
     squares = squares.concat(makeSquares(edge, left));
   }
-
-  DEBUG && console.log("Squares", squares);
 
   const overlap = makePairs(squares)
     .map(([a, b]) => {
@@ -41,7 +33,6 @@ function solve(plan) {
       return 0;
     })
     .reduce(sum, 0);
-  DEBUG && console.log("Overlap", overlap);
   return squares.map(({ area }) => area).reduce(sum, 0) - overlap;
 }
 
@@ -52,17 +43,10 @@ function makeSquares(edge, edgesOnLeft) {
   // Sorted right-to-left, because we are "looking left" into the shape
   const sortedCrossings = [...edgesOnLeft].sort((a, b) => b.x - a.x);
   for (const crosser of sortedCrossings) {
-    // TODO the problem is in here somewhere...
-    DEBUG && console.log("EDGE", edge, "High", highY, "Low", lowY, "Cross", crosser);
+    if (crosser.lowY >= highY || crosser.highY <= lowY) {
+      continue;
+    }
     if (crosser.highY >= highY && crosser.lowY <= lowY) {
-      DEBUG &&
-        console.log(
-          "Edge",
-          edge,
-          `(${lowY}-${highY})`,
-          "is contained",
-          crosser
-        );
       const square = {
         highY: highY,
         lowY: lowY,
@@ -70,37 +54,31 @@ function makeSquares(edge, edgesOnLeft) {
         lowX: crosser.x,
         area: (highY - lowY + 1) * (edge.x - crosser.x + 1),
       };
-      if (square.highY == square.lowY) {
-        DEBUG && console.log("1. Created a flat square", square);
-      } else {
-        squares.push(square);
-      }
+      squares.push(square);
       break;
     } else if (crosser.highY < highY && crosser.lowY > lowY) {
-      DEBUG &&
-        console.log("Edge", edge, `(${lowY}-${highY})`, "is split", crosser);
       const splitA = {
         highY: highY,
         lowY: crosser.highY,
         x: edge.x,
       };
       const splitB = {
-        highY: crosser.highY,
+        highY: crosser.lowY,
         lowY: lowY,
         x: edge.x,
       };
-      return makeSquares(splitA, findLeft(edgesOnLeft, splitA)).concat(
-        makeSquares(splitB, findLeft(edgesOnLeft, splitB))
-      );
-    } else if (crosser.lowY <= lowY && crosser.highY < highY && crosser.highY > lowY) {
-      DEBUG &&
-        console.log(
-          "Edge",
-          edge,
-          `(${lowY}-${highY})`,
-          "is cut from below",
-          crosser
-        );
+      const square = {
+        lowY: crosser.lowY,
+        highY: crosser.highY,
+        lowX: crosser.x,
+        highX: edge.x,
+        area: (crosser.highY - crosser.lowY + 1) * (edge.x - crosser.x + 1),
+      };
+      squares.push(square);
+      return makeSquares(splitA, edgesOnLeft)
+        .concat(makeSquares(splitB, edgesOnLeft))
+        .concat(squares);
+    } else if (crosser.lowY <= lowY && crosser.highY < highY) {
       const square = {
         lowY: lowY,
         highY: crosser.highY,
@@ -108,21 +86,9 @@ function makeSquares(edge, edgesOnLeft) {
         highX: edge.x,
         area: (crosser.highY - lowY + 1) * (edge.x - crosser.x + 1),
       };
-      if (square.highY == square.lowY) {
-        DEBUG && console.log("2. Created a flat square", square);
-      } else {
-        squares.push(square);
-      }
+      squares.push(square);
       lowY = crosser.highY;
-    } else if (crosser.highY >= highY && crosser.lowY > lowY && crosser.lowY < highY) {
-      DEBUG &&
-        console.log(
-          "Edge",
-          edge,
-          `(${lowY}-${highY})`,
-          "is cut from above",
-          crosser
-        );
+    } else if (crosser.highY >= highY && crosser.lowY > lowY) {
       const square = {
         lowY: crosser.lowY,
         highY: highY,
@@ -130,11 +96,7 @@ function makeSquares(edge, edgesOnLeft) {
         highX: edge.x,
         area: (highY - crosser.lowY + 1) * (edge.x - crosser.x + 1),
       };
-      if (square.highY == square.lowY) {
-        DEBUG && console.log("3. Created a flat square", square);
-      } else {
-        squares.push(square);
-      }
+      squares.push(square);
       highY = crosser.lowY;
     }
   }
