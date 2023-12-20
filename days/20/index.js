@@ -1,16 +1,36 @@
+import { lcm } from "../../utils.js";
+
 export function run(input) {
-  const modules = parseModules(input.trim());
-  console.log(
-    "A:",
-    simulate(modules, 1000)
-  );
+  const moduleDescriptions = parseModules(input.trim());
+  console.log("A:", a(moduleDescriptions));
+  console.log("B:", b(moduleDescriptions));
+}
+
+function a(moduleDescriptions) {
+  return simulate(makeModules(moduleDescriptions), 1000);
+}
+
+function b(moduleDescriptions) {
+  // We rely on the fact that RX is fed by a conjunction with periodic inputs
+  // Find the period of each input and find the lowest common multiple,
+  // which will be the first cycle that has all inputs "high", causing a low
+  // pulse to RX (our exit condition)
+  
+  const target = "rx";
+  const incoming = moduleDescriptions[target].incoming;
+  if (incoming.length > 1) {
+    throw new Error("More than one incoming for RX, b needs work");
+  }
+  return simulateB(
+    makeModules(moduleDescriptions),
+    moduleDescriptions[incoming]
+  ).reduce(lcm, 1);
 }
 
 function simulate(modules, targetPresses) {
   const queue = [];
   let highs = 0;
   let lows = 0;
-  let presses = 0;
   const emit = function (from, to, pulse) {
     queue.push({ from, to, pulse });
     if (pulse) {
@@ -19,20 +39,50 @@ function simulate(modules, targetPresses) {
       lows++;
     }
   };
-  while (presses < targetPresses) {
-    emit("button", "broadcaster", false);
-    presses++;
-    while (queue.length > 0) {
-      const { from, to, pulse } = queue.shift();
-      modules[to](from, pulse, emit);
-    }
+  for (let i = 0; i < targetPresses; i++) {
+    simulateOnePress(modules, emit, queue);
   }
   return highs * lows;
 }
 
+function simulateB(modules, stopWhenTrue) {
+  const queue = [];
+  let presses = 0;
+  let done = false;
+  let diff = false;
+  const incoming = {};
+  const emit = function (from, to, pulse) {
+    if (to == stopWhenTrue.name && pulse) {
+      if (!incoming[from]) {
+        incoming[from] = presses;
+      }
+      if (Object.keys(incoming).length == stopWhenTrue.incoming.length) {
+        done = true;
+      }
+    }
+    queue.push({ from, to, pulse });
+  };
+  while (!done) {
+    presses++;
+    simulateOnePress(modules, emit, queue);
+    if (diff) {
+      console.log(hjTrues);
+      diff = false;
+    }
+  }
+  return Object.values(incoming);
+}
+
+function simulateOnePress(modules, emit, queue) {
+  emit("button", "broadcaster", false);
+  while (queue.length > 0) {
+    const { from, to, pulse } = queue.shift();
+    modules[to](from, pulse, emit);
+  }
+}
+
 function parseModules(input) {
   const lines = input.split("\n");
-  const modules = {};
   const moduleDescriptions = {};
   for (const line of lines) {
     const [nameWithPrefix, targetList] = line.split(" -> ");
@@ -59,6 +109,11 @@ function parseModules(input) {
     });
   }
 
+  return moduleDescriptions;
+}
+
+function makeModules(moduleDescriptions) {
+  const modules = {};
   for (const md of Object.values(moduleDescriptions)) {
     modules[md.name] = makeModule(md);
   }
@@ -80,11 +135,9 @@ function makeModule({ name, type, incoming, outgoing }) {
   throw new Error(`Could not work with description for "${name}" (${type})`);
 }
 
-function makeOutput(name) {
-  return function output(_sender, pulse, _emit) {
-  }
+function makeOutput(_name) {
+  return function output(_sender, _pulse, _emit) {};
 }
-
 
 function makeBroadcaster(outgoing) {
   return function broadcaster(_sender, pulse, emit) {
