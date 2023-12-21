@@ -15,7 +15,7 @@ function b(moduleDescriptions) {
   // Find the period of each input and find the lowest common multiple,
   // which will be the first cycle that has all inputs "high", causing a low
   // pulse to RX (our exit condition)
-  
+
   const target = "rx";
   const incoming = moduleDescriptions[target].incoming;
   if (incoming.length > 1) {
