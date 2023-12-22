@@ -1,9 +1,10 @@
-import { max } from "../../utils.js";
+import { max, sum } from "../../utils.js";
 
 export function run(input) {
   const bricks = parseBricks(input.trim());
-  const settledBricks = settleBricks(bricks);
+  const settledBricks = settleBricks(bricks).bricks;
   console.log("A:", a(settledBricks));
+  console.log("B:", b(settledBricks));
 }
 
 function a(bricks) {
@@ -13,11 +14,18 @@ function a(bricks) {
     supporters: findSupporters(brick, bricks),
     supportees: findSupportees(brick, bricks),
   }));
-  return bricksWithSupports.filter(({ brick, supportees }) => {
+  return bricksWithSupports.filter(({ supportees }) => {
     return supportees.every(
       (s) => bricksWithSupports[s.index].supporters.length > 1
     );
   }).length;
+}
+
+function b(bricks) {
+  return bricks.map((_, index) => {
+    const bricksWithoutThis = bricks.filter((_, i) => i != index);
+    return settleBricks(bricksWithoutThis).moved;
+  }).reduce(sum);
 }
 
 function findSupporters(brick, bricks) {
@@ -56,11 +64,13 @@ function parseBrick(line) {
   };
 }
 
-function settleBricks(bricks) {
-  bricks.sort((a, b) => a.z1 - b.z1);
+function settleBricks(inputBricks) {
+  let moved = 0;
+  const bricks = [...inputBricks].sort((a, b) => a.z1 - b.z1);
   let highX = max(bricks.map(({ x2 }) => x2));
   let highY = max(bricks.map(({ y2 }) => y2));
   const heightMap = [];
+  const fallenBricks = [];
 
   for (let y = 0; y <= highY; y++) {
     heightMap.push([]);
@@ -76,13 +86,26 @@ function settleBricks(bricks) {
       }
     }
     const zDelta = brick.z1 - (highestZ + 1);
-    brick.z1 -= zDelta;
-    brick.z2 -= zDelta;
+    if (zDelta > 0) {
+      moved++;
+    }
+    const fallenBrick = {
+      x1: brick.x1,
+      x2: brick.x2,
+      y1: brick.y1,
+      y2: brick.y2,
+      z1: brick.z1 - zDelta,
+      z2: brick.z2 - zDelta,
+    };
+    fallenBricks.push(fallenBrick);
     for (let x = brick.x1; x <= brick.x2; x++) {
       for (let y = brick.y1; y <= brick.y2; y++) {
-        heightMap[y][x] = brick.z2;
+        heightMap[y][x] = fallenBrick.z2;
       }
     }
   }
-  return bricks;
+  return {
+    bricks: fallenBricks,
+    moved,
+  };
 }
